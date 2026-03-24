@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+}
+
+enum WorkType {
+  ACABADO
+  SUAJE
+  IMPRESION
+  MAQUINA_SUAJE
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Employee {
+  id        String   @id @default(cuid())
+  number    Int      @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    WorkOrder[]
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  rfc       String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    WorkOrder[]
+  receipts  Receipt[]
+}
+
+model WorkOrder {
+  id         String   @id @default(cuid())
+  orderNo    Int      @unique @default(autoincrement())
+  workDate   DateTime
+  workType   WorkType
+  jobTitle   String
+  notes      String?
+  payload    Json
+  employeeId String
+  clientId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  client     Client   @relation(fields: [clientId], references: [id])
+
+  receiptItems ReceiptItem[]
+}
+
+model Receipt {
+  id        String   @id @default(cuid())
+  receiptNo Int      @unique @default(autoincrement())
+  issueDate DateTime @default(now())
+  clientId  String
+
+  client    Client   @relation(fields: [clientId], references: [id])
+  address   String?
+  phone     String?
+  rfc       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     ReceiptItem[]
+}
+
+model ReceiptItem {
+  id          String   @id @default(cuid())
+  receiptId   String
+  orderId     String?
+  quantity    Int      @default(1)
+  description String
+  amount      Decimal  @db.Decimal(10,2)
+
+  receipt     Receipt   @relation(fields: [receiptId], references: [id])
+  order       WorkOrder? @relation(fields: [orderId], references: [id])
+}
