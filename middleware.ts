@@ -1,29 +1,44 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { cookieName, verifySession } from "./lib/auth";
-export const runtime = "nodejs";
+import { cookieName } from "@/lib/session"; // ✅ solo cookieName (sin jose)
 
-export async function middleware(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const isPublicApi = pathname.startsWith("/api/public/") || pathname.startsWith("/api/auth/") || pathname.startsWith("/api/ordenes");
-  if (isPublicApi) return NextResponse.next();
+  // APIs públicas y login/logout no requieren cookie
+  const isPublicApi =
+    pathname.startsWith("/api/public/") ||
+    pathname.startsWith("/api/auth/");
 
-  const isAdminRoute = pathname.startsWith("/admin") && !pathname.startsWith("/admin/login");
-  const isProtectedApi = pathname.startsWith("/api/empleados") || pathname.startsWith("/api/clientes") || pathname.startsWith("/api/recibos");
+  // OJO: /api/ordenes lo dejamos pasar porque empleados lo usan sin auth admin
+  // (admin sí está protegido dentro de los endpoints sensibles)
+  const isOrdersApi = pathname.startsWith("/api/ordenes");
+
+  if (isPublicApi || isOrdersApi) return NextResponse.next();
+
+  // Protege panel admin (excepto login)
+  const isAdminRoute =
+    pathname.startsWith("/admin") && !pathname.startsWith("/admin/login");
+
+  // Protege APIs admin
+  const isProtectedApi =
+    pathname.startsWith("/api/empleados") ||
+    pathname.startsWith("/api/clientes") ||
+    pathname.startsWith("/api/recibos");
+
   if (!isAdminRoute && !isProtectedApi) return NextResponse.next();
 
+  // Solo checamos que exista cookie (sin verificar JWT aquí)
   const token = req.cookies.get(cookieName)?.value;
+
   if (!token) {
-    if (isAdminRoute) return NextResponse.redirect(new URL("/admin/login", req.url));
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL("/admin/login", req.url));
+    }
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
 
-  try { await verifySession(token); return NextResponse.next(); }
-  catch {
-    if (isAdminRoute) return NextResponse.redirect(new URL("/admin/login", req.url));
-    return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
-  }
+  return NextResponse.next();
 }
 
 export const config = { matcher: ["/admin/:path*", "/api/:path*"] };
