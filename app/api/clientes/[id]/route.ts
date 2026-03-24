@@ -1,16 +1,17 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { clientUpdateSchema } from "@/lib/validators";
+import { requireAdmin } from "@/lib/requireAdmin"; // si no lo tienes, usa tu requireAdmin inline
 
-export async function PATCH(req: Request, { params }:{ params:{ id:string } }) {
-  const body = await req.json().catch(()=>({}));
-  const parsed = clientUpdateSchema.safeParse(body);
-  if(!parsed.success) return NextResponse.json({ error:"INVALID_INPUT", details: parsed.error.flatten() }, { status:400 });
-  const updated = await prisma.client.update({ where:{ id: params.id }, data: parsed.data });
-  return NextResponse.json(updated);
-}
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function DELETE(_: Request, { params }:{ params:{ id:string } }) {
-  await prisma.client.delete({ where:{ id: params.id } });
-  return NextResponse.json({ ok:true });
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.res;
+
+  const { id } = await ctx.params;
+
+  await prisma.client.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
 }
