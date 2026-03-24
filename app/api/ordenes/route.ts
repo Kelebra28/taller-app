@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { orderCreateSchema } from "@/lib/validators";
+import { Prisma } from "@prisma/client";
+
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -46,7 +48,7 @@ export async function POST(req: Request) {
       workType,
       jobTitle,
       notes: notes || null,
-      payload
+      payload: payload as Prisma.InputJsonValue
     },
     include:{
       employee: { select:{ id:true, number:true, name:true } },
