@@ -6,8 +6,8 @@ import { Modal } from "@/components/Modal";
 import { Lock, LogIn, Mail } from "lucide-react";
 
 export default function AdminLoginPage(){
-  const [email,setEmail] = useState("admin@taller.com");
-  const [password,setPassword] = useState("Admin123!");
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
   const [modal,setModal] = useState({ open:false, title:"", msg:"" });
 
   async function login(){
