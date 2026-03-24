@@ -7,17 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-}
-
-enum WorkType {
-  ACABADO
-  SUAJE
-  IMPRESION
-  MAQUINA_SUAJE
-}
-
 model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -28,71 +17,84 @@ model AdminUser {
 }
 
 model Employee {
-  id        String   @id @default(cuid())
-  number    Int      @unique
+  id        String      @id @default(cuid())
+  number    Int         @unique
   name      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
   orders    WorkOrder[]
 }
 
 model Client {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   name      String
   phone     String?
   rfc       String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    WorkOrder[]
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
   receipts  Receipt[]
+  orders    WorkOrder[]
 }
 
 model WorkOrder {
-  id         String   @id @default(cuid())
-  orderNo    Int      @unique @default(autoincrement())
-  workDate   DateTime
-  workType   WorkType
-  jobTitle   String
-  notes      String?
-  payload    Json
-  employeeId String
-  clientId   String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  employee   Employee @relation(fields: [employeeId], references: [id])
-  client     Client   @relation(fields: [clientId], references: [id])
-
+  id           String        @id @default(cuid())
+  orderNo      Int           @unique @default(autoincrement())
+  workDate     DateTime
+  workType     WorkType
+  jobTitle     String
+  notes        String?
+  payload      String        @db.LongText
+  employeeId   String
+  clientId     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   receiptItems ReceiptItem[]
+  client       Client        @relation(fields: [clientId], references: [id])
+  employee     Employee      @relation(fields: [employeeId], references: [id])
+
+  @@index([clientId], map: "WorkOrder_clientId_fkey")
+  @@index([employeeId], map: "WorkOrder_employeeId_fkey")
 }
 
 model Receipt {
-  id        String   @id @default(cuid())
-  receiptNo Int      @unique @default(autoincrement())
-  issueDate DateTime @default(now())
+  id        String        @id @default(cuid())
+  receiptNo Int           @unique @default(autoincrement())
+  issueDate DateTime      @default(now())
   clientId  String
-
-  client    Client   @relation(fields: [clientId], references: [id])
   address   String?
   phone     String?
   rfc       String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  client    Client        @relation(fields: [clientId], references: [id])
   items     ReceiptItem[]
+
+  @@index([clientId], map: "Receipt_clientId_fkey")
 }
 
 model ReceiptItem {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   receiptId   String
   orderId     String?
-  quantity    Int      @default(1)
+  quantity    Int        @default(1)
   description String
-  amount      Decimal  @db.Decimal(10,2)
-
-  receipt     Receipt   @relation(fields: [receiptId], references: [id])
+  amount      Decimal    @db.Decimal(10, 2)
   order       WorkOrder? @relation(fields: [orderId], references: [id])
+  receipt     Receipt    @relation(fields: [receiptId], references: [id])
+
+  @@index([orderId], map: "ReceiptItem_orderId_fkey")
+  @@index([receiptId], map: "ReceiptItem_receiptId_fkey")
+}
+
+enum Role {
+  ADMIN
+}
+
+enum WorkType {
+  ACABADO
+  SUAJE
+  IMPRESION
+  MAQUINA_SUAJE
 }
