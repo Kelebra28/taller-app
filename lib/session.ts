@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+export const runtime = "nodejs";
 
 const secret = new TextEncoder().encode(process.env.AUTH_SECRET || "dev-secret");
 export const cookieName = process.env.AUTH_COOKIE_NAME || "taller_session";

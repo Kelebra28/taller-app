@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySession, cookieName } from "@/lib/session";
+export const runtime = "nodejs";
 
 export async function requireAdmin() {
   const jar = await cookies();

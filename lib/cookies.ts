@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { cookieName } from "./session";
+export const runtime = "nodejs";
 
 const secure = process.env.NODE_ENV === "production";
 
