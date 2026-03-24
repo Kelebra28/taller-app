@@ -1,8 +1,8 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { orderCreateSchema } from "@/lib/validators";
-import { Prisma } from "@prisma/client";
-
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -16,6 +16,7 @@ export async function GET(req: Request) {
   if (employeeId) where.employeeId = employeeId;
   if (clientId) where.clientId = clientId;
   if (workType) where.workType = workType;
+
   if (dateFrom || dateTo) {
     where.workDate = {};
     if (dateFrom) where.workDate.gte = new Date(dateFrom + "T00:00:00.000Z");
@@ -31,29 +32,44 @@ export async function GET(req: Request) {
     },
     take: 500,
   });
+
   return NextResponse.json(orders);
 }
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(()=>({}));
+  const body = await req.json().catch(() => ({}));
   const parsed = orderCreateSchema.safeParse(body);
-  if(!parsed.success) return NextResponse.json({ error:"INVALID_INPUT", details: parsed.error.flatten() }, { status:400 });
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "INVALID_INPUT", details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
 
   const { employeeId, clientId, workDate, workType, jobTitle, notes, payload } = parsed.data;
+
+  // ✅ payload en DB es STRING (LongText). Guardamos JSON string.
+  const payloadStr =
+    typeof payload === "string"
+      ? payload
+      : JSON.stringify(payload ?? {});
+
   const created = await prisma.workOrder.create({
-    data:{
+    data: {
       employeeId,
       clientId,
       workDate: new Date(workDate + "T00:00:00.000Z"),
       workType,
       jobTitle,
       notes: notes || null,
-      payload: payload as Prisma.InputJsonValue
+      payload: payloadStr, // ✅ STRING
     },
-    include:{
-      employee: { select:{ id:true, number:true, name:true } },
-      client: { select:{ id:true, name:true, phone:true, rfc:true } },
-    }
+    include: {
+      employee: { select: { id: true, number: true, name: true } },
+      client: { select: { id: true, name: true, phone: true, rfc: true } },
+    },
   });
+
   return NextResponse.json(created);
 }

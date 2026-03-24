@@ -30,7 +30,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const data: any = {};
   if (typeof body.jobTitle === "string") data.jobTitle = body.jobTitle.trim();
   if (typeof body.notes === "string") data.notes = body.notes;
-  if (body.payload && typeof body.payload === "object") data.payload = body.payload;
+  if (body.payload !== undefined) {
+    data.payload = typeof body.payload === "string"
+      ? body.payload
+      : JSON.stringify(body.payload);
+  }
 
   const updated = await prisma.workOrder.update({
     where: { id },
