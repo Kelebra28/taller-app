@@ -44,81 +44,38 @@ export function Shell({
   }
 
   return (
-    <div className="container">
+    <div className="layoutWrapper">
       <header className="topbar">
-        <div className="topbarLeft">
-          <div className="logo" />
-          <div className="brandText">
-            <div className="brandTitle">{title}</div>
-            <div className="brandSub">{subtitle}</div>
-          </div>
-          <span className="pill">{mode === "admin" ? "Admin" : "Operación"}</span>
-        </div>
-
-        {/* Desktop */}
-        <nav className="topbarRight">
-          {mode === "admin" ? (
-            <>
-              <div className="tabs">
-                {adminTabs.map((t) => (
-                  <Link
-                    key={t.href}
-                    href={t.href}
-                    className={"tab " + (activeAdmin === t.href ? "active" : "")}
-                  >
-                    {t.icon}
-                    <span>{t.label}</span>
-                  </Link>
-                ))}
-              </div>
-
-              <div className="topbarActions">
-                {right}
-                <button className="btn danger" onClick={logout}>
-                  <LogOut size={16} /> Salir
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="topbarActions">
-              <Link className="btn" href="/empleados">
-                <User size={16} /> Operación
-              </Link>
-              <Link className="btn" href="/admin">
-                <Shield size={16} /> Admin
-              </Link>
-              {right}
+        <div className="container">
+          <div className="topbarLeft">
+            <div className="logo">
+              <img src="/logo-header.svg" alt="Rpm Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
-          )}
-        </nav>
+            <div className="brandText">
+              <h1 className="brandTitle">{title}</h1>
+              <p className="brandSub">{subtitle}</p>
+            </div>
+            <span className="chip">{mode === "admin" ? "Admin" : "Operación"}</span>
+          </div>
 
-        {/* Mobile */}
-        <button className="iconBtn" onClick={() => setOpen((v) => !v)} aria-label="Menu">
-          {open ? <X size={18} /> : <Menu size={18} />}
-        </button>
-      </header>
-
-      {/* Mobile drawer */}
-      {open && (
-        <div className="drawer" onClick={() => setOpen(false)}>
-          <div className="drawerPanel" onClick={(e) => e.stopPropagation()}>
+          {/* Desktop */}
+          <nav className="topbarRight">
             {mode === "admin" ? (
               <>
-                <div className="drawerTitle">Admin</div>
-                <div className="drawerList">
+                <div className="tabs">
                   {adminTabs.map((t) => (
                     <Link
                       key={t.href}
                       href={t.href}
-                      className={"drawerItem " + (activeAdmin === t.href ? "active" : "")}
-                      onClick={() => setOpen(false)}
+                      className={"tab " + (activeAdmin === t.href ? "active" : "")}
                     >
                       {t.icon}
                       <span>{t.label}</span>
                     </Link>
                   ))}
                 </div>
-                <div className="drawerFooter">
+
+                <div className="topbarActions">
                   {right}
                   <button className="btn danger" onClick={logout}>
                     <LogOut size={16} /> Salir
@@ -126,21 +83,24 @@ export function Shell({
                 </div>
               </>
             ) : (
-              <>
-                <div className="drawerTitle">Menú</div>
-                <div className="drawerList">
-                  <Link className="drawerItem active" href="/empleados" onClick={() => setOpen(false)}>
-                    <User size={16} /> <span>Operación</span>
-                  </Link>
-                  <Link className="drawerItem" href="/admin" onClick={() => setOpen(false)}>
-                    <Shield size={16} /> <span>Admin</span>
-                  </Link>
-                </div>
-              </>
+              <div className="topbarActions">
+                <Link className="tab active" href="/empleados">
+                  <User size={16} /> Operación
+                </Link>
+                <Link className="tab" href="/admin">
+                  <Shield size={16} /> Admin
+                </Link>
+                {right}
+              </div>
             )}
-          </div>
+          </nav>
+
+          {/* Mobile */}
+          <button className="iconBtn" onClick={() => setOpen((v) => !v)} aria-label="Menu" style={{ display: 'none' }}>
+            {open ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
-      )}
+      </header>
     </div>
   );
 } 

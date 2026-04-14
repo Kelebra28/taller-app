@@ -37,11 +37,26 @@ export default function AdminLoginPage(){
               </div>
 
               <div className="label">Password</div>
-              <input className="input" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} />
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <span className="tag">
+                  <Lock size={14} />
+                </span>
+                <input
+                  className="input"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
 
-              <div className="hr"/>
-              <button className="btn accent" style={{width:"100%"}} onClick={login}><LogIn size={16}/> Entrar</button>
-              <p className="small" style={{marginTop:12}}>Crear admin: <span className="tag">npm run seed:admin</span></p>
+              <div className="hr" />
+              <button
+                className="btn accent"
+                style={{ width: "100%" }}
+                onClick={login}
+              >
+                <LogIn size={16} /> Entrar
+              </button>
             </div>
           </div>
         </FadeIn>

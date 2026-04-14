@@ -854,18 +854,20 @@ export default function AdminPage() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     gap: 10,
+                    marginTop: 20
                   }}
                 >
-                  <div style={{ fontWeight: 900 }}>Recibo</div>
+                  <div style={{ fontWeight: 800 }}>Generar Recibo</div>
                   <button
-                    className="btn"
+                    className="btn sm"
                     disabled={
                       uiBusy ||
                       (!selectedClient && selectedOrderIds.size === 0 && !draft)
                     }
                     onClick={clearSelection}
+                    style={{ padding: '6px 12px', fontSize: '12px' }}
                   >
-                    <X size={16} /> Limpiar
+                    <X size={14} /> Limpiar
                   </button>
                 </div>
 
@@ -930,19 +932,6 @@ export default function AdminPage() {
                     {printing ? "Abriendo impresión..." : "Imprimir"}
                   </button>
                 )}
-
-                <ReceiptPrint
-                  data={
-                    printData ?? {
-                      receiptNo: 0,
-                      issueDate: isoToday(),
-                      clientName: "",
-                      address: "",
-                      phone: "",
-                      rows: [],
-                    }
-                  }
-                />
               </div>
             </div>
 
@@ -1096,7 +1085,7 @@ export default function AdminPage() {
                             }}
                           >
                             <button
-                              className="btn"
+                              className="btn sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setFocusedOrderId(o.id);
@@ -1113,10 +1102,6 @@ export default function AdminPage() {
                             >
                               <Eye size={16} />
                             </button>
-
-                            <span className="tag">
-                              {selected ? "Seleccionada" : "Click para incluir"}
-                            </span>
                           </div>
                         </div>
                       );
@@ -1428,22 +1413,22 @@ export default function AdminPage() {
       <button className="btn" onClick={() => setConfirmDeleteOpen(false)} disabled={deletingOrder}>
         Cancelar
       </button>
-      <button className="btn danger" onClick={runDeleteFocusedOrder} disabled={deletingOrder}>
+      <button className="btn danger primary" onClick={runDeleteFocusedOrder} disabled={deletingOrder}>
         {deletingOrder ? <Spinner /> : <Trash2 size={16} />}
-        {deletingOrder ? "Borrando..." : "Sí, borrar"}
+        {deletingOrder ? "Borrando..." : "Sí, borrar permanentemente"}
       </button>
     </div>
   }
 >
-  <div className="small" style={{ lineHeight: 1.6 }}>
+  <div style={{ padding: '10px 0', fontSize: '15px' }}>
     {focusedOrder ? (
       <>
-        Vas a borrar la orden <b>#{displayOrderNo(focusedOrder.orderNo)}</b>.
+        Se eliminará la orden <b style={{ color: 'var(--accent)' }}>#{displayOrderNo(focusedOrder.orderNo)}</b>.
         <br />
-        Esta acción no se puede deshacer.
+        Esta acción es irreversible y afectará el historial de producción.
       </>
     ) : (
-      "Selecciona una orden."
+      "Por favor selecciona una orden para continuar."
     )}
   </div>
 </Modal>
@@ -1525,6 +1510,21 @@ export default function AdminPage() {
           {modal.msg}
         </div>
       </Modal>
+
+      <div style={{ display: 'none' }} className="print-only">
+        <ReceiptPrint
+          data={
+            printData ?? {
+              receiptNo: 0,
+              issueDate: isoToday(),
+              clientName: "",
+              address: "",
+              phone: "",
+              rows: [],
+            }
+          }
+        />
+      </div>
     </div>
   );
 }

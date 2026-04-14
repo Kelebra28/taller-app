@@ -117,14 +117,6 @@ function TypeFields({
   if (workType === "SUAJE") {
     return (
       <>
-        <div className="label">Suajista</div>
-        <input
-          className="input"
-          disabled={disabled}
-          value={payload?.suajista ?? ""}
-          onChange={(e) => set("suajista", e.target.value)}
-        />
-
         <div className="label">Original</div>
         <input
           className="input"
@@ -187,14 +179,6 @@ function TypeFields({
   if (workType === "IMPRESION") {
     return (
       <>
-        <div className="label">Prensista</div>
-        <input
-          className="input"
-          disabled={disabled}
-          value={payload?.prensista ?? ""}
-          onChange={(e) => set("prensista", e.target.value)}
-        />
-
         <div className="label">Tiro</div>
         <input
           className="input"
@@ -266,14 +250,6 @@ function TypeFields({
   // MAQUINA_SUAJE
   return (
     <>
-      <div className="label">Prensista</div>
-      <input
-        className="input"
-        disabled={disabled}
-        value={payload?.prensista ?? ""}
-        onChange={(e) => set("prensista", e.target.value)}
-      />
-
       <div className="label">Tiro</div>
       <input
         className="input"
@@ -356,7 +332,6 @@ export default function EmpleadosPage() {
       });
     if (workType === "SUAJE")
       setPayload({
-        suajista: "",
         original: "",
         trazo: "",
         sacabocado: "",
@@ -367,7 +342,6 @@ export default function EmpleadosPage() {
       });
     if (workType === "IMPRESION")
       setPayload({
-        prensista: "",
         tiro: 0,
         frenteVuelta: "",
         placas: 0,
@@ -378,7 +352,6 @@ export default function EmpleadosPage() {
       });
     if (workType === "MAQUINA_SUAJE")
       setPayload({
-        prensista: "",
         tiro: 0,
         arreglos: "",
         folioInterno: "",
@@ -391,41 +364,38 @@ export default function EmpleadosPage() {
     [meta, employeeId]
   );
 
+  // Auto-selección de empleado si no hay uno seleccionado y ya cargó meta
+  useEffect(() => {
+    if (!employeeId && meta?.employees && meta.employees.length > 0) {
+      setEmployeeId(meta.employees[0].id);
+    }
+  }, [meta, employeeId]);
+
   async function save() {
     if (saving || loadingMeta) return;
-    setSaving(true);
-
-    try {
-      if (!employeeId) {
-        setModal({
-          open: true,
-          title: "Falta empleado",
-          msg: "Selecciona un empleado.",
-        });
+    
+    if (!employeeId) {
+      // Intentar forzar el primero de nuevo si por algo se borró
+      const first = meta?.employees?.[0]?.id;
+      if (first) setEmployeeId(first);
+      else {
+        setModal({ open: true, title: "Error", msg: "No hay empleados activos cargados." });
         return;
       }
+    }
+
+    setSaving(true);
+    try {
       if (!clientId) {
-        setModal({
-          open: true,
-          title: "Falta cliente",
-          msg: "Selecciona un cliente.",
-        });
+        setModal({ open: true, title: "Falta cliente", msg: "Selecciona un cliente." });
         return;
       }
       if (!workType) {
-        setModal({
-          open: true,
-          title: "Falta tipo",
-          msg: "Selecciona tipo de trabajo.",
-        });
+        setModal({ open: true, title: "Falta tipo", msg: "Selecciona tipo de trabajo." });
         return;
       }
       if (!jobTitle.trim()) {
-        setModal({
-          open: true,
-          title: "Falta trabajo",
-          msg: "Escribe el trabajo.",
-        });
+        setModal({ open: true, title: "Falta trabajo", msg: "Escribe el nombre del trabajo." });
         return;
       }
 
@@ -433,12 +403,12 @@ export default function EmpleadosPage() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          employeeId,
+          employeeId: employeeId || meta?.employees[0]?.id,
           clientId,
           workDate,
           workType,
           jobTitle,
-          notes,
+          notes: notes || "",
           payload,
         }),
       });
@@ -448,7 +418,7 @@ export default function EmpleadosPage() {
         setModal({
           open: true,
           title: "Error",
-          msg: j?.error || "No se pudo guardar.",
+          msg: j?.error || "No se pudo guardar la orden.",
         });
         return;
       }
@@ -456,19 +426,17 @@ export default function EmpleadosPage() {
       const saved = await res.json();
       setModal({
         open: true,
-        title: "Guardado",
-        msg: `Orden guardada. Interno: ${saved.orderNo}`,
+        title: "¡Orden Guardada!",
+        msg: `Se ha registrado la orden satisfactoriamente. Número interno: ${saved.orderNo}`,
       });
 
+      // Reset fields
       setJobTitle("");
       setNotes("");
-      setJobTitle("");
-setNotes("");
-setWorkType("");
-setPayload({});
-setClientId("");
-setEmployeeId("");
-setWorkDate(isoToday());
+      setWorkType("");
+      setPayload({});
+      setClientId("");
+      setWorkDate(isoToday());
     } catch {
       setModal({
         open: true,
@@ -484,60 +452,69 @@ setWorkDate(isoToday());
     <div>
       <Shell
         mode="empleados"
-        title="Órdenes de Trabajo • Taller"
-        subtitle="Operación: captura rápida por empleado"
+        title="Panel de Producción"
+        subtitle="Captura de Órdenes de Suaje"
       />
 
       <div className="container">
         <FadeIn>
           {loadingMeta && (
-            <PageLoader label="Cargando empleados y clientes..." />
+            <PageLoader label="Preparando entorno de trabajo..." />
           )}
 
           <div className="grid">
-            {/* Panel Izquierdo */}
+            {/* Panel de Selección de Trabajo */}
             <div className={"card " + (loadingMeta ? "loadingBlock" : "")}>
-              {loadingMeta && (
-                <div className="loadingOverlay">
-                  <Spinner size={22} />
-                </div>
-              )}
-
               <div className="cardHeader">
-                <h2>
-                  <User size={16} style={{ verticalAlign: "-3px" }} /> Empleado
-                </h2>
-                <span className="chip">
-                  {meta?.employees?.length ?? 0} activos
-                </span>
+                <h2>1. Tipo de Trabajo</h2>
               </div>
 
               <div className="cardBody">
-                <div className="label">Seleccionar empleado</div>
+                <div className="label">Seleccionar Operador / Empleado</div>
                 <select
                   className="select"
                   disabled={uiBusy}
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
                 >
-                  <option value="">—</option>
-                  {meta?.employees?.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.number} • {e.name}
+                  <option value="">— Elegir empleado —</option>
+                  {meta?.employees?.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.number} • {emp.name}
                     </option>
                   ))}
                 </select>
 
+                <div className="label">¿Qué trabajo se está realizando?</div>
+                <div style={{ display: "grid", gap: 12 }}>
+                  {workTypes.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      className={"rowItem " + (workType === t.key ? "active" : "")}
+                      onClick={() => setWorkType(t.key)}
+                      disabled={uiBusy}
+                      style={{ textAlign: 'left', width: '100%', cursor: 'pointer' }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: '15px' }}>{t.title}</div>
+                        <div className="small" style={{ marginTop: 2 }}>{t.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
                 <div className="hr" />
 
-                <div className="label">Cliente</div>
+                <div className="label">Detalles de Entrega</div>
+                <div className="label" style={{ marginTop: 0 }}>Seleccionar Cliente</div>
                 <select
                   className="select"
                   disabled={uiBusy}
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                 >
-                  <option value="">—</option>
+                  <option value="">— Elegir cliente —</option>
                   {meta?.clients?.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -545,8 +522,8 @@ setWorkDate(isoToday());
                   ))}
                 </select>
 
-                <div className="label">Fecha</div>
-                <div style={{ display: "flex", gap: 10 }}>
+                <div className="label">Fecha de Trabajo</div>
+                <div style={{ display: "flex", gap: 8 }}>
                   <input
                     className="input"
                     disabled={uiBusy}
@@ -562,100 +539,56 @@ setWorkDate(isoToday());
                     <Calendar size={16} /> Hoy
                   </button>
                 </div>
-
-                <div className="hr" />
-
-                <div className="label">Tipo de trabajo</div>
-
-                <div style={{ display: "grid", gap: 10 }}>
-                  {workTypes.map((t) => (
-                    <div
-                      key={t.key}
-                      className={
-                        "rowItem " + (workType === t.key ? "active" : "")
-                      }
-                      style={{ cursor: "default" }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 900 }}>{t.title}</div>
-                        <div className="small">{t.desc}</div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{ minWidth: 110 }}
-                        disabled={uiBusy}
-                        onClick={() => setWorkType(t.key)}
-                      >
-                        Elegir
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="small" style={{ marginTop: 10 }}>
-                  Seleccionado: <b>{workType || "—"}</b>
-                </div>
               </div>
             </div>
 
-            {/* Panel Derecho */}
+            {/* Panel de Captura Detallada */}
             <div className={"card " + (saving ? "loadingBlock" : "")}>
-              {saving && (
-                <div className="loadingOverlay">
-                  <Spinner size={22} />
-                </div>
-              )}
-
               <div className="cardHeader">
-                <h2>
-                  <ClipboardList size={16} style={{ verticalAlign: "-3px" }} />{" "}
-                  Captura
-                </h2>
-                <span className="chip">
-                  Empleado: {selectedEmployee ? selectedEmployee.number : "—"}
+                <h2>2. Detalles de la Orden</h2>
+                <span className="chip" style={{ background: workType ? 'var(--accent)' : 'var(--bg-subtle)', color: workType ? '#fff' : 'var(--muted)', borderColor: workType ? 'var(--accent)' : 'var(--line)' }}>
+                  {workType ? workType : "Esperando tipo"}
                 </span>
               </div>
 
               <div className="cardBody">
-                <div className="label">Trabajo</div>
+                <div className="label">Nombre del Trabajo / Descripción</div>
                 <input
                   className="input"
+                  style={{ fontSize: '18px', fontWeight: 600 }}
                   disabled={uiBusy}
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
-                  placeholder="Ej: Hojas suajadas, Trípticos..."
+                  placeholder="Ej: CAJAS PIZZA 30CM"
                 />
 
-                <div className="label">Observaciones (generales)</div>
+                <div className="hr" />
+
+                <div className="label">Campos Específicos del Proceso</div>
+                <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', border: '1px dashed #e4e4e7' }}>
+                  <TypeFields
+                    workType={workType}
+                    payload={payload}
+                    setPayload={setPayload}
+                    disabled={uiBusy}
+                  />
+                </div>
+
+                <div className="label">Notas Adicionales</div>
                 <textarea
                   className="textarea"
                   disabled={uiBusy}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Notas..."
+                  placeholder="Instrucciones especiales..."
                 />
 
                 <div className="hr" />
 
-                <div className="label">Campos del tipo</div>
-                <TypeFields
-                  workType={workType}
-                  payload={payload}
-                  setPayload={setPayload}
-                  disabled={uiBusy}
-                />
-
-                <div className="hr" />
-
-                <button className="btn accent" onClick={save} disabled={uiBusy}>
-                  {saving ? <Spinner /> : <Save size={16} />}
-                  {saving ? "Guardando..." : "Guardar orden"}
+                <button className="btn accent" onClick={save} disabled={uiBusy || !workType} style={{ width: '100%', padding: '20px', fontSize: '16px' }}>
+                  {saving ? <Spinner /> : <Save size={20} />}
+                  {saving ? "Guardando proceso..." : "FINALIZAR Y GUARDAR ORDEN"}
                 </button>
-
-                <div className="hr" />
-                <div className="small">Ya guarda payload por tipo en DB.</div>
               </div>
             </div>
           </div>
@@ -671,11 +604,11 @@ setWorkDate(isoToday());
             className="btn primary"
             onClick={() => setModal((m) => ({ ...m, open: false }))}
           >
-            OK
+            ENTENDIDO
           </button>
         }
       >
-        <div className="small" style={{ lineHeight: 1.6 }}>
+        <div style={{ padding: '8px 0', fontSize: '15px' }}>
           {modal.msg}
         </div>
       </Modal>
